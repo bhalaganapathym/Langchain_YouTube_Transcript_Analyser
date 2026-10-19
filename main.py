@@ -51,7 +51,7 @@ prompt = ChatPromptTemplate.from_messages(
         ),
         (
             "human",
-            {trs}
+            "{trs}"
         )
     ]
 )
@@ -90,5 +90,45 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 chunks = text_splitter.split_documents([doc])
 
+###############################################
+#             SUMMARIZE EACH CHUNK            #
+###############################################
+
+summ = []
+
+for chunk in chunks:
+    summ.append(chain.invoke(
+        {
+            "trs" : chunk.page_content
+        }
+        ).text)
 
 
+###############################################
+#     CRAFTING PROMPT FOR ENTIRE SUMMARY      #
+###############################################
+
+prompt2 = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """Combine these section summaries into a single comprehensive summary of the entire video."""
+        ),
+        (
+            "human",
+            "{summ}"
+        )
+    ]
+)
+
+
+############################################
+#            INVOKING CHAIN                #
+############################################
+
+chain2 = prompt2 | llm
+
+
+final_summary = chain2.invoke({"summ":summ})
+
+print(final_summary.text)
